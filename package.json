@@ -1,0 +1,27 @@
+{
+  "name": "silent-h4x-new-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Silent H4X Store - New Backend",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "check": "node --check src/server.js",
+    "db:test": "node database/test-connection.js",
+    "db:migrate": "node database/apply-migration.js",
+    "db:create-admin": "node database/create-admin.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
