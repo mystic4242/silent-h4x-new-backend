@@ -172,15 +172,15 @@ router.post('/attribute', adminAuth, async (req, res, next) => {
     await connection.query(
       `INSERT INTO referral_attributions
        (referral_profile_id, referred_customer_id,
-        attributed_at, attribution_expires_at)
-       VALUES ($1, $2, NOW(), NOW() + INTERVAL '30 days')
+        first_visit_at, attributed_at, attribution_expires_at)
+       VALUES ($1, $2, NOW(), NOW(), NOW() + INTERVAL '30 days')
        ON CONFLICT (referred_customer_id) DO NOTHING`,
       [profile.rows[0].id, newCustomerId]
     );
 
     await connection.query(
       `INSERT INTO referral_events
-       (referral_profile_id, event_type, visitor_hash, path)
+       (referral_profile_id, event_type, visitor_token_hash, landing_path)
        VALUES ($1, 'conversion', $2, $3)`,
       [
         profile.rows[0].id,

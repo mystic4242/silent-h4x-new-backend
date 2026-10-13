@@ -66,7 +66,7 @@ router.post('/login', adminLoginLimiter, async (req, res, next) => {
     res.cookie('silent_admin_sid', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
       maxAge: 8 * 60 * 60 * 1000
     });

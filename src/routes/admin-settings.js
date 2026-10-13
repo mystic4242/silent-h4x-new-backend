@@ -3,6 +3,7 @@ const { pool } = require('../db');
 const { adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
+
 router.use(adminAuth);
 
 const allowedSettings = new Set([
@@ -15,13 +16,17 @@ const allowedSettings = new Set([
 router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(
-      `SELECT key, value, updated_at
+      `SELECT setting_key, setting_value, updated_at
        FROM app_settings
-       WHERE key = ANY($1::text[])
-       ORDER BY key`,
+       WHERE setting_key = ANY($1::text[])
+       ORDER BY setting_key`,
       [[...allowedSettings]]
     );
-    res.json({ success: true, settings: result.rows });
+
+    res.json({
+      success: true,
+      settings: result.rows
+    });
   } catch (err) {
     next(err);
   }
@@ -38,7 +43,11 @@ router.put('/', async (req, res, next) => {
   }
 
   for (const [key, value] of Object.entries(values)) {
-    if (!allowedSettings.has(key) || typeof value !== 'string' || value.length > 300) {
+    if (
+      !allowedSettings.has(key) ||
+      typeof value !== 'string' ||
+      value.length > 300
+    ) {
       return res.status(400).json({
         success: false,
         message: `Invalid setting: ${key}`
@@ -47,30 +56,43 @@ router.put('/', async (req, res, next) => {
   }
 
   let client;
+
   try {
     client = await pool.connect();
     await client.query('BEGIN');
 
     for (const [key, value] of Object.entries(values)) {
       await client.query(
-        `INSERT INTO app_settings (key, value)
+        `INSERT INTO app_settings (setting_key, setting_value)
          VALUES ($1, $2)
-         ON CONFLICT (key) DO UPDATE
-         SET value = EXCLUDED.value, updated_at = NOW()`,
+         ON CONFLICT (setting_key)
+         DO UPDATE SET
+           setting_value = EXCLUDED.setting_value,
+           updated_at = NOW()`,
         [key, value.trim()]
       );
     }
 
     await client.query(
-      `INSERT INTO audit_logs (admin_id, action, entity_type, details)
+      `INSERT INTO audit_logs
+       (admin_id, action, entity_type, details)
        VALUES ($1, 'settings.updated', 'app_settings', $2::jsonb)`,
-      [req.auth.id, JSON.stringify({ changedKeys: Object.keys(values) })]
+      [
+        req.auth.id,
+        JSON.stringify({ changedKeys: Object.keys(values) })
+      ]
     );
 
     await client.query('COMMIT');
-    res.json({ success: true, message: 'Settings saved.' });
+
+    res.json({
+      success: true,
+      message: 'Settings saved.'
+    });
   } catch (err) {
-    if (client) await client.query('ROLLBACK').catch(() => {});
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
     next(err);
   } finally {
     if (client) client.release();

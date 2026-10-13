@@ -93,15 +93,15 @@ router.post('/', async (req, res, next) => {
       await client.query(
         `INSERT INTO referral_attributions
          (referral_profile_id, referred_customer_id,
-          attributed_at, attribution_expires_at)
-         VALUES ($1, $2, NOW(), NOW() + INTERVAL '30 days')
+          first_visit_at, attributed_at, attribution_expires_at)
+         VALUES ($1, $2, NOW(), NOW(), NOW() + INTERVAL '30 days')
          ON CONFLICT (referred_customer_id) DO NOTHING`,
         [referralProfileId, customer.id]
       );
 
       await client.query(
         `INSERT INTO referral_events
-         (referral_profile_id, event_type, visitor_hash, path)
+         (referral_profile_id, event_type, visitor_token_hash, landing_path)
          VALUES ($1, 'conversion', $2, $3)`,
         [
           referralProfileId,
@@ -230,7 +230,7 @@ router.post('/:customerId/access-keys/:keyId/revoke', async (req, res, next) => 
 
     const result = await client.query(
       `UPDATE customer_access_keys
-       SET status = 'revoked', revoked_at = NOW()
+       SET status = 'revoked'
        WHERE id = $1 AND customer_id = $2 AND status = 'active'
        RETURNING id`,
       [keyId, customerId]
