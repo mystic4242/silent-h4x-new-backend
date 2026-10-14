@@ -5,38 +5,43 @@ const path = require('path');
 const { pool } = require('../src/db');
 
 async function main() {
-  const file = path.join(__dirname, 'migration-001.sql');
-
-  if (!fs.existsSync(file)) {
-    throw new Error('database/migration-001.sql was not found.');
-  }
-
-  const sql = fs.readFileSync(file, 'utf8');
   const client = await pool.connect();
 
   try {
-    await client.query(sql);
-    console.log('Migration 001 applied successfully.');
+    for (const version of ['001', '002']) {
+      const file = path.join(
+        __dirname,
+        `migration-${version}.sql`
+      );
 
-    const result = await client.query(`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND table_name IN (
-          'customer_sessions',
-          'admin_sessions'
-        )
-      ORDER BY table_name
-    `);
+      if (!fs.existsSync(file)) {
+        throw new Error(`Migration ${version} not found.`);
+      }
 
-    console.log('Session tables found:', result.rows.length);
-
-    for (const row of result.rows) {
-      console.log('-', row.table_name);
+      const sql = fs.readFileSync(file, 'utf8');
+      await client.query(sql);
+      console.log(`Migration ${version} applied successfully.`);
     }
 
-    if (result.rows.length !== 2) {
-      throw new Error('Expected both session tables.');
+    const result = await client.query(`
+      SELECT
+        column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'generated_keys'
+        AND column_name IN (
+          'encrypted_key',
+          'revealed_at',
+          'revoked_at'
+        )
+      ORDER BY column_name
+    `);
+
+    console.log('Verified generated_keys columns:');
+    result.rows.forEach(row => console.log('-', row.column_name));
+
+    if (result.rows.length !== 3) {
+      throw new Error('Required generated_keys columns are missing.');
     }
   } finally {
     client.release();

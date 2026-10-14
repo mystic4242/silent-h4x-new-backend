@@ -93,6 +93,7 @@ app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/admin/customers', require('./routes/admin-customers'));
 app.use('/api/admin/payments', require('./routes/admin-payments'));
 app.use('/api/admin/products', require('./routes/admin-products'));
+app.use('/api/admin/orders', require('./routes/admin-orders'));
 app.use('/api/admin/wallet', require('./routes/admin-wallet'));
 app.use('/api/admin/settings', require('./routes/admin-settings'));
 
