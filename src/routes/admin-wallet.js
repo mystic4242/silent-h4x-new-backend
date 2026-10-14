@@ -10,22 +10,25 @@ router.use(adminAuth);
 router.post('/:customerId/adjust', async (req, res, next) => {
   const customerId = Number(req.params.customerId);
   const amount = Number(req.body?.amount);
+  const direction = String(req.body?.direction || '').toLowerCase();
   const reason = String(req.body?.reason || '').trim().slice(0, 300);
 
   if (
     !Number.isSafeInteger(customerId) ||
     customerId < 1 ||
     !Number.isSafeInteger(amount) ||
-    amount === 0 ||
-    Math.abs(amount) > 1000000000 ||
+    amount <= 0 ||
+    amount > 1000000000 ||
+    !['credit', 'debit'].includes(direction) ||
     reason.length < 3
   ) {
     return res.status(400).json({
       success: false,
-      message: 'Provide a valid customer, adjustment, and reason.'
+      message: 'Provide a valid customer, positive amount, direction, and reason.'
     });
   }
 
+  const signedAmount = direction === 'debit' ? -amount : amount;
   let client;
 
   try {
@@ -47,11 +50,11 @@ router.post('/:customerId/adjust', async (req, res, next) => {
 
     const balance = Number(result.rows[0].balance);
 
-    if (balance + amount < 0) {
+    if (balance + signedAmount < 0) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: 'Adjustment would make the wallet negative.'
+        message: 'Insufficient wallet balance for this deduction.'
       });
     }
 
@@ -59,7 +62,7 @@ router.post('/:customerId/adjust', async (req, res, next) => {
       `UPDATE wallets
        SET balance = balance + $2, updated_at = NOW()
        WHERE customer_id = $1`,
-      [customerId, amount]
+      [customerId, signedAmount]
     );
 
     await client.query(
@@ -69,8 +72,8 @@ router.post('/:customerId/adjust', async (req, res, next) => {
        VALUES ($1, 'adjustment', $2, $3, $4, $5, $6)`,
       [
         customerId,
-        Math.abs(amount),
-        amount > 0 ? 'credit' : 'debit',
+        amount,
+        direction,
         'Admin adjustment: ' + reason,
         `admin-adjustment:${crypto.randomUUID()}`,
         req.auth.id
@@ -84,15 +87,17 @@ router.post('/:customerId/adjust', async (req, res, next) => {
       [
         req.auth.id,
         customerId,
-        JSON.stringify({ amount, reason })
+        JSON.stringify({ amount, direction, signedAmount, reason })
       ]
     );
 
     await client.query('COMMIT');
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Wallet adjusted.'
+      message: direction === 'debit'
+        ? 'Wallet balance deducted successfully.'
+        : 'Wallet balance credited successfully.'
     });
   } catch (err) {
     if (client) {
