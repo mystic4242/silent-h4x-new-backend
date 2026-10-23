@@ -49,7 +49,7 @@ router.post('/login', adminLoginLimiter, async (req, res, next) => {
     const result = await db.query(
       `SELECT id, username
        FROM admin_users
-       WHERE username = 'silent' AND status = 'active'
+       WHERE username = 'Mystic' AND status = 'active'
        LIMIT 1`
     );
 
@@ -75,7 +75,7 @@ router.post('/login', adminLoginLimiter, async (req, res, next) => {
       success: true,
       admin: {
         id: admin.id,
-        username: 'silent'
+        username: 'Mystic'
       }
     });
   } catch (err) {
@@ -89,7 +89,7 @@ router.get('/me', adminAuth, async (req, res, next) => {
       `SELECT id, username
        FROM admin_users
        WHERE id = $1
-         AND username = 'silent'
+         AND username = 'Mystic'
          AND status = 'active'`,
       [req.auth.id]
     );
@@ -105,7 +105,7 @@ router.get('/me', adminAuth, async (req, res, next) => {
       success: true,
       admin: {
         id: result.rows[0].id,
-        username: 'silent'
+        username: 'Mystic'
       }
     });
   } catch (err) {
