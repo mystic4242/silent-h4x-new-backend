@@ -10,8 +10,8 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 const allowedOrigins = [
-  process.env.CUSTOMER_FRONTEND_URL || 'https://silent-h4x.vercel.app',
-  process.env.ADMIN_FRONTEND_URL || 'https://silenth4x-admin.vercel.app',
+  process.env.CUSTOMER_FRONTEND_URL || 'https://mystic-mods.vercel.app',
+  process.env.ADMIN_FRONTEND_URL || 'https://mysticmods-admin.vercel.app',
   'http://localhost:5500',
   'http://127.0.0.1:5500'
 ];
@@ -58,7 +58,7 @@ app.use((req, res, next) => {
 
 app.get('/', (req, res) => {
   res.json({
-    name: 'Silent H4X Store API',
+    name: 'Mystic Mod Zone API',
     status: 'online'
   });
 });
