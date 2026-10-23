@@ -71,7 +71,7 @@ CREATE INDEX IF NOT EXISTS idx_payment_requests_status
 
 CREATE TABLE IF NOT EXISTS products (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    slot SMALLINT NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 10),
+    slot INTEGER NOT NULL UNIQUE CHECK (slot >= 1),
     name VARCHAR(120) NOT NULL,
     image_url TEXT,
     product_url TEXT,

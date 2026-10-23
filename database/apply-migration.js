@@ -15,7 +15,7 @@ async function main() {
       )
     `);
 
-    for (const version of ['001', '002', '003']) {
+    for (const version of ['001', '002', '003', '004']) {
       const file = path.join(__dirname, `migration-${version}.sql`);
 
       if (!fs.existsSync(file)) {
