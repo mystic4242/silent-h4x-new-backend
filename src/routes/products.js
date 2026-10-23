@@ -11,9 +11,10 @@ router.get('/', async (req, res, next) => {
         p.slot,
         p.name,
         p.image_url,
-        p.product_url,
         p.description,
         p.status,
+        p.is_free,
+        p.price,
         COALESCE(
           json_agg(
             json_build_object(
@@ -21,14 +22,11 @@ router.get('/', async (req, res, next) => {
               'price', d.price
             )
             ORDER BY d.duration_hours
-          ) FILTER (
-            WHERE d.id IS NOT NULL AND d.active = TRUE
-          ),
+          ) FILTER (WHERE d.id IS NOT NULL AND d.active = TRUE),
           '[]'::json
         ) AS durations
       FROM products p
-      LEFT JOIN product_durations d
-        ON d.product_id = p.id
+      LEFT JOIN product_durations d ON d.product_id = p.id
       WHERE p.status = 'active'
       GROUP BY p.id
       ORDER BY p.slot ASC

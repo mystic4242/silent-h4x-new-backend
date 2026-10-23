@@ -10,7 +10,7 @@ router.use(adminAuth);
 router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(
-      `SELECT c.id, c.display_name, c.status, c.created_at,
+      `SELECT c.id, c.display_name, c.email, c.status, c.created_at,
               COALESCE(w.balance, 0) AS balance,
               COUNT(DISTINCT k.id) AS access_key_count
        FROM customers c
@@ -265,7 +265,7 @@ router.post('/:id/status', async (req, res, next) => {
   const status = req.body?.status;
 
   if (!Number.isSafeInteger(customerId) || customerId < 1 ||
-      !['active', 'suspended'].includes(status)) {
+      !['active', 'suspended', 'banned'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid customer or status.' });
   }
 
@@ -282,6 +282,10 @@ router.post('/:id/status', async (req, res, next) => {
     if (!result.rowCount) {
       await client.query('ROLLBACK');
       return res.status(404).json({ success: false, message: 'Customer not found.' });
+    }
+
+    if (status !== 'active') {
+      await client.query('DELETE FROM customer_sessions WHERE customer_id = $1', [customerId]);
     }
 
     await client.query(
